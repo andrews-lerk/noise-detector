@@ -1,0 +1,4 @@
+rate: 30000 # sampling frequency (Hz)
+chunk: 1024 # buffer size
+channels: 1
+rms_detection_value: 7000 # high RMS point that trigger recording
