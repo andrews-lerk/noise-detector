@@ -164,5 +164,8 @@ cython_debug/
 # Config
 config/
 
+# Local
+local/
+
 # Programm results
 results/

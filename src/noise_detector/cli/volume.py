@@ -1,17 +1,14 @@
-import argparse
+import audioop
 import logging
-import time
-import datetime
-from pathlib import Path
 
 import pyaudio
+from tqdm import tqdm
 
 from noise_detector.infrastructure.logging import setup_logging
 from noise_detector.common import Config
-from noise_detector.application import Detector
 
 
-def main(argv: argparse.Namespace) -> None:
+def main() -> None:
     setup_logging()
     config = Config.load_config()
 
@@ -32,12 +29,6 @@ def main(argv: argparse.Namespace) -> None:
     )
     )
     logging.info("Input device selected with index: %s", input_device)
-    if argv.delay > 0:
-        logging.warning(
-            "Delay detector start until: %s",
-            (datetime.datetime.now() + datetime.timedelta(seconds=argv.delay)).strftime("%Y-%m-%d %H:%M:%S")
-        )
-        time.sleep(argv.delay)
 
     stream = pa.open(
         format=pyaudio.paInt16,
@@ -47,26 +38,23 @@ def main(argv: argparse.Namespace) -> None:
         frames_per_buffer=config.chunk,
         input_device_index=input_device
     )
-
-    detector = Detector(
-        stream, argv.listen_secs, config.rms_detection_value, Path(__file__).parent.parent.parent.parent / "results"
-    )
-
+    logging.info("Volume level RMS...")
     try:
-        detector.start_listening()
+        with tqdm(total=7000, bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [RMS]') as volume_level:
+            while True:
+                data = stream.read(stream._frames_per_buffer, exception_on_overflow=False)
+                rms = audioop.rms(data, 2)
+                volume_level.update(rms)
+                volume_level.refresh()
+                volume_level.n = 0
     except (KeyboardInterrupt, SystemExit):
-        logging.error("Stop received")
+        logging.warning("Stop received")
     finally:
         stream.close()
         stream.stop_stream()
         pa.terminate()
         logging.warning("Stopped stream, pyaudio terminated")
 
-    logging.info("Detector finished")
-
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Noise detector')
-    parser.add_argument("-ls", "--listen_secs", type=int, default=0, help='Listen time in secs')
-    parser.add_argument("-d", "--delay", type=int, default=0, help='Delay detector start in seconds')
-    main(parser.parse_args())
+    main()

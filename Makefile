@@ -8,7 +8,11 @@ help:
 
 .PHONY: detector
 detector: ## Run noise detection process
-	$(py) python -m $(package_dir).noise_detector.cli.detector
+	$(py) python -m $(package_dir).noise_detector.cli.detector --listen_secs=$(listen_secs) --delay=$(delay)
+
+.PHONY: volume
+volume: ## Run volume level present
+	$(py) python -m $(package_dir).noise_detector.cli.volume
 
 .PHONY: install
 install: ## Install all depends
