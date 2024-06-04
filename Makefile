@@ -13,3 +13,8 @@ detector: ## Run noise detection process
 .PHONY: install
 install: ## Install all depends
 	pdm install -G:all
+
+.PHONY: init
+init: ## Init config and results dir
+	cp -r config.dist config
+	mkdir results
